@@ -1,11 +1,11 @@
-sort1 uses: TODO
+sort1 uses: Bubble sort
 
-How do you know?: TODO
+How do you know?: when use Random data it get 0m4.055s, and use sorted data it get 0m0.233s. Faster sorting sorted data, that means using Bubble sort.
 
-sort2 uses: TODO
+sort2 uses: Merge sort
 
-How do you know?: TODO
+How do you know?: The delta time of using Random data and sorted data is very small.
 
-sort3 uses: TODO
+sort3 uses: Selection sort
 
-How do you know?: TODO
+How do you know?: The time of using Random data and sorted data is nearly identical.
