@@ -36,3 +36,4 @@
 
 .venv/
 src/
+*.zip
