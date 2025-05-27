@@ -39,4 +39,7 @@
 
 .venv/
 src/
+dictionaries/
+keys/
+texts/
 *.zip
