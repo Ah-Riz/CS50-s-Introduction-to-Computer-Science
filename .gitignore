@@ -33,7 +33,7 @@
 *.wav
 *.h
 *.bmp
-
+*.raw
 
 
 .venv/
