@@ -31,7 +31,8 @@
 *.out
 *.app
 *.wav
-
+*.h
+*.bmp
 
 
 
