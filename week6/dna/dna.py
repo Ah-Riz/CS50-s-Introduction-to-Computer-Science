@@ -5,17 +5,52 @@ import sys
 def main():
 
     # TODO: Check for command-line usage
+    if len(sys.argv) != 3:
+        print("Usage: python dna.py data.csv sequence.txt")
+        sys.exit(1)
 
     # TODO: Read database file into a variable
-    
-    # TODO: Read DNA sequence file into a variable
+    reader = []
+    srt_list = []
+    with open(sys.argv[1], "r") as file:
+        data = csv.DictReader(file)
+        for row in data:
+            reader.append(row)
+            if srt_list == []:
+                srt_list = list(row.keys())
+                srt_list.pop(0)  # Remove the 'name' header
 
+    # TODO: Read DNA sequence file into a variable
+    sequence = ""
+    with open(sys.argv[2], "r") as file:
+        data = csv.reader(file)
+        sequence = next(data)[0]  # Assuming the sequence is in the first row and column
+    
     # TODO: Find longest match of each STR in DNA sequence
+    sequences = check_sequence(sequence, srt_list)
 
     # TODO: Check database for matching profiles
+    name = check_database(reader, sequences)
 
+    print(name)
     return
 
+def check_database(reader, sequences):
+    for row in reader:
+        match = True
+        for subsequence, count in sequences.items():
+            if int(row[subsequence]) != count:
+                match = False
+                break
+        if match:
+            return row["name"]
+    return "No match"
+
+def check_sequence(sequence, srt_list):
+    sequences = dict(zip(srt_list,[0] * len(srt_list)))
+    for subsequence in sequences.keys():
+        sequences[subsequence] = longest_match(sequence, subsequence)
+    return sequences
 
 def longest_match(sequence, subsequence):
     """Returns length of longest run of subsequence in sequence."""
