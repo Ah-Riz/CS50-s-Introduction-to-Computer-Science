@@ -42,4 +42,6 @@ src/
 dictionaries/
 keys/
 texts/
+databases/
+sequences/
 *.zip
