@@ -35,7 +35,7 @@
 *.bmp
 *.raw
 *.jpg
-*.sql
+*.db
 
 
 .venv/
