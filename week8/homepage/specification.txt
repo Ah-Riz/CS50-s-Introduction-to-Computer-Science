@@ -1,0 +1,27 @@
+HTML Tags Used:
+1. <!DOCTYPE html> - Defines the document type and version of HTML being used (HTML5).
+2. <html lang="en"> - Specifies the language for the document, English in this case.
+3. <head>...</head> - Contains meta-information about the document such as character set, viewport settings, links to CSS and JS files, and the title.
+4. <meta charset="UTF-8"> - Sets the character encoding to UTF-8, supporting international characters.
+5. <meta name="viewport" content="width=device-width, initial-scale=1.0"> - Ensures the page scales correctly on different devices.
+6. <link rel="stylesheet" href="..."> - Links to Bootstrap CSS for responsive design and styling.
+7. <script src="..."></script> - Includes jQuery and Bootstrap JS files, necessary for certain interactive features like navbar toggling.
+8. <title>Homepage</title> - Sets the title of the document displayed in the browser tab.
+9. <body>...</body> - Contains all the contents visible on the page.
+10. <nav class="navbar ..."> - Defines the navigation bar with Bootstrap classes for responsiveness.
+11. <div class="collapse navbar-collapse" id="..."> - Container for collapsing navigation links on smaller screens, using Bootstrap's collapse functionality.
+12. <section id="#about/contact"> - Sections of the page, used to group content logically and provide anchors for navigation.
+13. <div class="container mt-5"> - Used within sections to contain and center content.
+14. <h3>...</h3>, <p>...</p>, <ul>, <li> - Semantic HTML tags used for structuring the text, lists, etc., within the sections.
+15. <a href="..."> - Creates hyperlinks to email addresses or external URLs like LinkedIn.
+
+CSS Properties Used:
+1. background-color - Set on .navbar to define its color (light gray in this case).
+2. margin and padding - Adjusted globally (* selector) for a clean default style reset.
+3. font-family - Defined globally (body selector) to ensure consistent typography across the site.
+4. @media (max-width: 992px) {...} - Media query used to apply styles specific to screens less than 992px wide, such as changing background color of collapsed navbar for better visibility.
+5. box-sizing - Set globally (* selector) to ensure padding and border are included in the element's total width and height.
+
+JavaScript: Used primarily for enhancing interactivity, specifically on mobile devices where clicking the navbar toggle button would expand the menu. This was achieved by adding event listeners to detect clicks and trigger the collapse functionality provided by Bootstrap.
+
+Bootstrap: Utilized throughout for responsive design elements such as collapsible navigation bars (`<div class="collapse">`). It also aids in providing a consistent styling framework across different screen sizes, ensuring that on smaller screens (like phones), the navbar collapses into a vertical list to save space and provide an easier user experience.

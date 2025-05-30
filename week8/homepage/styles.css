@@ -1,0 +1,24 @@
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    background-color: #f8f9fa!important;
+}
+
+.container {
+    margin-top: 20px;
+}
+
+@media (max-width: 992px) {
+    .navbar-collapse {
+        background-color: white; /* Ensures the collapsed menu is visible */
+    }
+}
