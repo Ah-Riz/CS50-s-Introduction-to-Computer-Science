@@ -15,6 +15,18 @@
 
                 <h2>Add a Birthday</h2>
                 <!-- TODO: Create a form for users to submit a name, a month, and a day -->
+                 <form action="/" method="post">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" required>
+
+                    <label for="month">Month:</label>
+                    <input type="number" id="month" name="month" min="1" max="12" required>
+
+                    <label for="day">Day:</label>
+                    <input type="number" id="day" name="day" min="1" max="31" required>
+
+                    <button type="submit">Add Birthday</button>
+                </form>
             </div>
 
             <div class="section">
@@ -29,9 +41,32 @@
                     </thead>
                     <tbody>
                         <!-- TODO: Loop through the database entries to display them in this table -->
+                        {% for birthday in birthdays %}
+                        <tr>
+                            <td>{{ birthday.name }}</td>
+                            <td>{{ birthday.month }}, {{ birthday.day }}</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </body>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+            document.querySelector("form").addEventListener("submit", function(event){
+                const name = document.querySelector("#name").value;
+                const month = document.querySelector("#month").value;
+                const day = document.querySelector("#day").value;
+                if (!name || !month || !day) {
+                    event.preventDefault();
+                    alert("Please fill out all fields.");
+                } else if (month < 1 || month > 12 || day < 1 || day > 31) {
+                    event.preventDefault();
+                    alert("Please enter a valid month (1-12) and day (1-31).");
+                }
+            });
+        }) 
+    </script>
 </html>
+

@@ -27,13 +27,33 @@ def index():
     if request.method == "POST":
 
         # TODO: Add the user's entry into the database
+        name = request.form.get("name")
+        month = request.form.get("month")
+        day = request.form.get("day")
+        db.execute("INSERT INTO birthdays (name, month, day) VALUES(?, ?, ?)", name, month, day)
 
         return redirect("/")
 
     else:
 
         # TODO: Display the entries in the database on index.html
-
-        return render_template("index.html")
+        months = {
+            1: "January",
+            2: "February",
+            3: "March",
+            4: "April",
+            5: "May",
+            6: "June",
+            7: "July",
+            8: "August",
+            9: "September",
+            10: "October",
+            11: "November",
+            12: "December"
+        }
+        birthdays = db.execute("SELECT id, name, month, day FROM birthdays")
+        for birthday in birthdays:
+            birthday["month"] = months[birthday["month"]]
+        return render_template("index.html", birthdays=birthdays)
 
 
