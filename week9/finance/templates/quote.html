@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quote
+{% endblock %}
+
+{% block main %}
+    {% if result %}
+    <h1 class="mb-4">Quote for {{ result["symbol"] }}</h1>
+    <p>A share of {{ result["name"] }}, costs ${{ result["price"] }}</p>
+    {% else %}
+    <form action="/quote" method="post">
+        <div class="mb-3">
+            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="symbol" placeholder="Symbol" type="text">
+        </div>
+        <button class="btn btn-primary" type="submit">Get Quote</button>
+    </form>
+    {% endif %}
+{% endblock %}

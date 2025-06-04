@@ -41,7 +41,21 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
-    return apology("TODO")
+    if request.method == "POST":
+        symbol = request.form.get("symbol")
+        shares = request.form.get("shares")
+        if not symbol or not shares:
+            return apology("must provide symbol and shares", 400)
+        if not lookup(symbol):
+            return apology("invalid symbol", 400)
+        if not shares.isdigit():
+            return apology("shares must be a positive integer", 400)
+        
+        balance = get_user_balance(session["user_id"])
+        
+
+        
+    return render_template("buy.html")
 
 
 @app.route("/history")
@@ -105,7 +119,18 @@ def logout():
 @login_required
 def quote():
     """Get stock quote."""
-    return apology("TODO")
+    if request.method == "POST":
+        data = lookup(request.form.get("symbol"))
+        if not data:
+            return apology("invalid symbol", 400)
+        result = {
+            "name": data["name"],
+            "price": usd(data["price"]),
+            "symbol": data["symbol"]
+        }
+        return render_template("quote.html", result=result)
+    
+    return render_template("quote.html", result=None)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -126,18 +151,16 @@ def register():
         elif password != confirmation:
             return apology("password does not match", 403)
         
-        check_u_name = db.execute("SELECT * FROM users WHERE username = ?", u_name)
-        if len(check_u_name) > 0:
+        if check_username(u_name) > 0:
             return apology("username already exists", 403)
-        
-        result = db.execute("INSERT INTO users (username, hash) VALUES (?, ?)",u_name,generate_password_hash(password))
-        print(result)
-        if not result:
+
+        if not insert_new_user(u_name, password):
             return apology("error", 403)
         else:
-            get_id = db.execute("SELECT id FROM users WHERE username = ?", u_name)
-            session["user_id"] = get_id[0]["id"]
-            print(session)
+            get_id = get_user_id(u_name)
+            if not get_id:
+                return apology("error retrieving user ID", 403)
+            session["user_id"] = get_id
             return redirect("/")
     return render_template("register.html")
 
@@ -147,3 +170,21 @@ def register():
 def sell():
     """Sell shares of stock"""
     return apology("TODO")
+
+def check_username(username):
+    """Check if username already exists in the database."""
+    result = db.execute("SELECT * FROM users WHERE username = ?", username)
+    return len(result)
+
+def insert_new_user(username, password):
+    """Insert a new user into the database."""
+    try:
+        return db.execute("INSERT INTO users (username, hash) VALUES (?, ?)",username,generate_password_hash(password))
+    except Exception as e:
+        print(f"Error inserting new user: {e}")
+        return False
+
+def get_user_id(username):
+    """Get the user ID based on the username."""
+    result = db.execute("SELECT id FROM users WHERE username = ?", username)
+    return result[0]["id"] if result else None
