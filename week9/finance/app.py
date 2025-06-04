@@ -34,8 +34,7 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    """Show portfolio of stocks"""
-    return apology("TODO")
+    return render_template("index.html")
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -112,7 +111,35 @@ def quote():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    return apology("TODO")
+    session.clear()
+
+    if request.method == "POST":
+        print(request.form)
+        u_name = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+        
+        if not u_name:
+            return apology("must provide username", 403)
+        elif not password or not confirmation:
+            return apology("must provide password", 403)
+        elif password != confirmation:
+            return apology("password does not match", 403)
+        
+        check_u_name = db.execute("SELECT * FROM users WHERE username = ?", u_name)
+        if len(check_u_name) > 0:
+            return apology("username already exists", 403)
+        
+        result = db.execute("INSERT INTO users (username, hash) VALUES (?, ?)",u_name,generate_password_hash(password))
+        print(result)
+        if not result:
+            return apology("error", 403)
+        else:
+            get_id = db.execute("SELECT id FROM users WHERE username = ?", u_name)
+            session["user_id"] = get_id[0]["id"]
+            print(session)
+            return redirect("/")
+    return render_template("register.html")
 
 
 @app.route("/sell", methods=["GET", "POST"])
