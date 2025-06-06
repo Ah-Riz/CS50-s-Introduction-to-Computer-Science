@@ -7,7 +7,7 @@
 {% block main %}
     {% if result %}
     <h1 class="mb-4">Quote for {{ result["symbol"] }}</h1>
-    <p>A share of {{ result["name"] }}, costs ${{ result["price"] }}</p>
+    <p>A share of {{ result["name"] }}, costs {{ result["price"] }}</p>
     {% else %}
     <form action="/quote" method="post">
         <div class="mb-3">

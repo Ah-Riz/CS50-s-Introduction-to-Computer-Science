@@ -34,7 +34,28 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html")
+    total = 0
+    portfolio = []
+    try:
+        raw_data = check_portfolio(session["user_id"])
+        if raw_data != []:
+            for row in raw_data:
+                portfolio.append(
+                    {
+                        "id": row["id"],
+                        "symbol": row["stock_name"],
+                        "shares": row["shares"],
+                        "price": usd(row["average_price"]),
+                        "total": usd(row["average_price"] * row["shares"]),
+                    }
+                )
+                total += row["shares"] * row["average_price"]
+    except Exception:
+        pass
+    user_cash = get_user_balance(session["user_id"])
+    total += user_cash
+
+    return render_template("index.html",portfolio = portfolio, cash = usd(user_cash), total = usd(total))
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -46,12 +67,20 @@ def buy():
         shares = request.form.get("shares")
         if not symbol or not shares:
             return apology("must provide symbol and shares", 400)
-        if not lookup(symbol):
-            return apology("invalid symbol", 400)
         if not shares.isdigit():
             return apology("shares must be a positive integer", 400)
+        shares = int(shares)
         
-        balance = get_user_balance(session["user_id"])
+        stock_data = lookup(symbol)
+        if not stock_data:
+            return apology("invalid symbol", 400)
+        price = stock_data["price"]
+        
+        result = transaction(session["user_id"], "BUY", symbol, shares, price)
+        if result == True:
+            return redirect("/")
+        else:
+            return apology("error", 400)
         
 
         
@@ -62,8 +91,22 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    return apology("TODO")
-
+    raw_data = get_history(session["user_id"])
+    data = []
+    for row in raw_data:
+        # stock_name, transaction_type, shares, price_per_share, transaction_date
+        data.append(
+            {
+                "symbol": row["stock_name"],
+                "type": row["transaction_type"],
+                "shares": row["shares"],
+                "price": usd(row["price_per_share"]),
+                "timestamp": row["transaction_date"],
+            }
+        )
+        # row["price"] = usd(row["price"])
+        # row["timestamp"] = row["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+    return render_template("history.html", data=data)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -76,11 +119,11 @@ def login():
     if request.method == "POST":
         # Ensure username was submitted
         if not request.form.get("username"):
-            return apology("must provide username", 403)
+            return apology("must provide username", 400)
 
         # Ensure password was submitted
         elif not request.form.get("password"):
-            return apology("must provide password", 403)
+            return apology("must provide password", 400)
 
         # Query database for username
         rows = db.execute(
@@ -91,7 +134,7 @@ def login():
         if len(rows) != 1 or not check_password_hash(
             rows[0]["hash"], request.form.get("password")
         ):
-            return apology("invalid username and/or password", 403)
+            return apology("invalid username and/or password", 400)
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
@@ -145,21 +188,21 @@ def register():
         confirmation = request.form.get("confirmation")
         
         if not u_name:
-            return apology("must provide username", 403)
+            return apology("must provide username", 400)
         elif not password or not confirmation:
-            return apology("must provide password", 403)
+            return apology("must provide password", 400)
         elif password != confirmation:
-            return apology("password does not match", 403)
+            return apology("password does not match", 400)
         
         if check_username(u_name) > 0:
-            return apology("username already exists", 403)
+            return apology("username already exists", 400)
 
         if not insert_new_user(u_name, password):
-            return apology("error", 403)
+            return apology("error", 400)
         else:
             get_id = get_user_id(u_name)
             if not get_id:
-                return apology("error retrieving user ID", 403)
+                return apology("error retrieving user ID", 400)
             session["user_id"] = get_id
             return redirect("/")
     return render_template("register.html")
@@ -169,7 +212,28 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    return apology("TODO")
+    if request.method == "POST":
+        print("post")
+        symbol = request.form.get("symbol")
+        shares = request.form.get("shares")
+        if not symbol or not shares:
+            return apology("must provide symbol and shares", 400)
+        if not shares.isdigit():
+            return apology("shares must be a positive integer", 400)
+        shares = int(shares)
+        
+        stock_data = lookup(symbol)
+        if not stock_data:
+            return apology("invalid symbol", 400)
+        price = stock_data["price"]
+
+        result = transaction(session["user_id"], "SELL", symbol, shares, price)
+        if result == True:
+            return redirect("/")
+        else:
+            return apology("error", 400)
+    else:
+        return render_template("sell.html", symbols=get_user_symbols(session["user_id"]))
 
 def check_username(username):
     """Check if username already exists in the database."""
@@ -188,3 +252,103 @@ def get_user_id(username):
     """Get the user ID based on the username."""
     result = db.execute("SELECT id FROM users WHERE username = ?", username)
     return result[0]["id"] if result else None
+
+def transaction(user_id, mode, symbol, shares, price):
+    if mode == "BUY":
+        balance = get_user_balance(user_id)
+        print("q,", balance, price * shares)
+        if balance < (price * shares):
+            return apology("not enough cash", 400)
+    elif mode == "SELL":
+        cur_shares = get_user_shares(user_id, symbol)
+        if shares > cur_shares:
+            return apology("not enough shares", 400)
+        
+    if update(user_id, mode, symbol, shares, price):
+        return True
+    else:
+        return apology("error", 400)
+
+
+def get_user_balance(user_id):
+    """Get the user's balance based on the user ID."""
+    result = db.execute("SELECT cash FROM users WHERE id = ?", user_id)
+    return result[0]["cash"] if result else None
+
+def update(user_id, mode, symbol, shares, price):
+    result = [False, False, False]
+    result[0] = update_user_cash(user_id, shares, price, mode)
+    result[1] = update_transaction_history(user_id, symbol, shares, price, mode)
+    result[2] = update_user_portfolio(user_id, symbol, shares, price, mode)
+    if False in result:
+        return False
+    return True
+
+def update_user_cash(user_id, shares, price, mode):
+    """Update the user's cash balance in the database."""
+    amount = price * shares
+    if mode == "BUY":
+        amount = amount * -1
+    return db.execute(f"UPDATE users SET cash = cash + (?) WHERE id = ?", amount, user_id)
+
+def update_transaction_history(user_id, symbol, shares, price, mode):
+    """Update the transaction history in the database."""
+    return db.execute("INSERT INTO transactions (user_id, transaction_type, stock_name, shares, price_per_share, total_amount) VALUES (?, ?, ?, ?, ?, ?)", user_id, mode, symbol, shares, price, shares*price)
+
+def update_user_portfolio(user_id, symbol, shares, price, mode):
+    """Update the user's portfolio in the database."""
+    print("0")
+    if mode == "BUY":
+        if check_portfolio(user_id, symbol) != []:
+            result = update_portfolio(user_id, symbol, shares, price)
+            print("1")
+        else:
+            result = new_portfolio(user_id, symbol, shares, price)
+            print("2")
+    else:
+        shares = shares * -1
+        result = update_portfolio(user_id, symbol, shares, price)
+        print("3")
+    return result
+
+def check_portfolio(user_id, stock_name = None):
+    """Check if the user has the stock in their portfolio."""
+    if stock_name:
+        result = db.execute("SELECT * FROM portfolio WHERE user_id = ? AND stock_name = ? AND shares >= 0", user_id, stock_name)
+    else:
+        result = db.execute("SELECT * FROM portfolio WHERE user_id = ? AND shares >= 0", user_id)
+    return result
+
+def new_portfolio(user_id, symbol, shares, price):
+    """Create a new portfolio entry for the user."""
+    res = db.execute("INSERT INTO portfolio (user_id, stock_name, shares, average_price) VALUES (?, ?, ?, ?)", user_id, symbol, shares, price)
+    return res
+
+def update_portfolio(user_id, symbol, shares, price):
+    """Update the user's portfolio in the database."""
+    get_current_data = check_portfolio(user_id, symbol)
+    cur_shares = get_current_data[0]["shares"]
+    cur_avg_price = get_current_data[0]["average_price"]
+    cur_avg_price = (cur_avg_price * cur_shares + price * shares) / shares+cur_shares
+    print("cur_shares",cur_shares)
+    print("cur_avg_price",cur_avg_price)
+    print("price",price)
+    print("shares",shares)
+    shares = cur_shares + shares
+
+    return db.execute("UPDATE portfolio SET shares = ?, last_updated = CURRENT_TIMESTAMP WHERE user_id = ? AND stock_name = ?", shares, user_id, symbol)
+
+def get_user_symbols(user_id):
+    """Get the user's symbols based on the user ID."""
+    result = db.execute("SELECT stock_name FROM portfolio WHERE user_id = ? AND shares >= 0", user_id)
+    return [row["stock_name"] for row in result]
+
+def get_user_shares(user_id, symbol):
+    """Get the user's shares based on the user ID and symbol."""
+    result = db.execute("SELECT shares FROM portfolio WHERE user_id = ? AND stock_name = ? AND shares >= 0", user_id, symbol)
+    return result[0]["shares"] if result else None
+
+def get_history(user_id):
+    """Get the user's transaction history based on the user ID."""
+    result = db.execute("SELECT stock_name, transaction_type, shares, price_per_share, transaction_date FROM transactions WHERE user_id = ?", user_id)
+    return result
