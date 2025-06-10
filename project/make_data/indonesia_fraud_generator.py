@@ -47,7 +47,7 @@ def generate_realistic_location():
         random.uniform(IDN_BOUNDS['min_lon'], IDN_BOUNDS['max_lon'])
     ]
 
-def generate_realistic_transactions(num_records=10000):
+def generate_realistic_transactions(num_records=10000, delta_days=30):
     """Generate raw transaction data without feature engineering"""
     # Create customer base
     customers = {}
@@ -55,7 +55,8 @@ def generate_realistic_transactions(num_records=10000):
         cust_id = f'C{str(i).zfill(8)}'
         customers[cust_id] = {
             'account_number': fake.bban(),
-            'avg_amount': max(50000, int(np.random.normal(300000, 150000)))
+            'avg_amount': max(50000, int(np.random.normal(300000, 150000))),
+            'device_id': fake.sha256()[:32],
         }
     
     # Create merchants
@@ -73,7 +74,7 @@ def generate_realistic_transactions(num_records=10000):
     
     # Generate transactions
     transactions = []
-    current_time = datetime.now() - timedelta(days=30)
+    current_time = datetime.now() - timedelta(days=delta_days)
     
     for _ in range(num_records):
         cust_id = random.choice(list(customers.keys()))
@@ -96,7 +97,6 @@ def generate_realistic_transactions(num_records=10000):
             'customer_lon': random.uniform(IDN_BOUNDS['min_lon'], IDN_BOUNDS['max_lon']),
             'merchant_lat': merchant['location'][0],
             'merchant_lon': merchant['location'][1],
-            'device_id': fake.sha256()[:32],
             'bank_branch': random.choice(list(BANK_BRANCHES.keys())),
             'fraud_probability': 0.0,
             'fraud_type': None,
@@ -162,5 +162,6 @@ def inject_money_laundering(tx):
 
 # Generate dataset
 if __name__ == "__main__":
-    df = generate_realistic_transactions(100000)
+    count = random.randint(100000, 130000)
+    df = generate_realistic_transactions(count, delta_days=30)
     df.to_csv('data/indonesia_transactions_raw.csv', index=False)
